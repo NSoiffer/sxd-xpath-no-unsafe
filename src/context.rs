@@ -1,7 +1,7 @@
 //! Support for the various types of contexts before and during XPath
 //! evaluation.
 
-use sxd_document::QName;
+use sxd_document_no_unsafe::QName;
 
 use std::collections::HashMap;
 use std::iter;
@@ -26,7 +26,7 @@ type Namespaces = HashMap<String, String>;
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use sxd_document::parser;
+/// use sxd_document_no_unsafe::parser;
 /// use sxd_xpath::{Factory, Context, Value};
 /// use sxd_xpath::{context, function};
 ///

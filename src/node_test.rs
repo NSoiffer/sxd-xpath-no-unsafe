@@ -1,6 +1,6 @@
 use std::fmt;
 
-use sxd_document::QName;
+use sxd_document_no_unsafe::QName;
 
 use crate::context;
 use crate::nodeset::{self, OrderedNodes};
@@ -167,8 +167,8 @@ impl NodeTest for ProcessingInstruction {
 mod test {
     use std::borrow::ToOwned;
 
-    use sxd_document::dom::{self, Document};
-    use sxd_document::{Package, QName};
+    use sxd_document_no_unsafe::dom::{self, Document};
+    use sxd_document_no_unsafe::{Package, QName};
 
     use crate::context::{self, Context};
     use crate::nodeset::OrderedNodes;

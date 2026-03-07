@@ -1,7 +1,7 @@
 use snafu::{OptionExt, ResultExt, Snafu};
 use std::collections::HashSet;
 use std::fmt;
-use sxd_document::QName;
+use sxd_document_no_unsafe::QName;
 
 use crate::axis::{Axis, AxisLike};
 use crate::context;
@@ -615,8 +615,8 @@ mod test {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use sxd_document::dom::Document;
-    use sxd_document::Package;
+    use sxd_document_no_unsafe::dom::Document;
+    use sxd_document_no_unsafe::Package;
 
     use crate::axis::AxisLike;
     use crate::context::{self, Context};

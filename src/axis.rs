@@ -207,8 +207,8 @@ where
 
 #[cfg(test)]
 mod test {
-    use sxd_document::dom;
-    use sxd_document::Package;
+    use sxd_document_no_unsafe::dom;
+    use sxd_document_no_unsafe::Package;
 
     use crate::context::{self, Context};
     use crate::node_test::NodeTest;

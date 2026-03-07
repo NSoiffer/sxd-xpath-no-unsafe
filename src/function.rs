@@ -6,7 +6,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 use std::ops::Index;
-use sxd_document::XmlChar;
+use sxd_document_no_unsafe::XmlChar;
 
 use crate::context;
 use crate::nodeset::Nodeset;
@@ -670,7 +670,7 @@ mod test {
     use std::borrow::ToOwned;
     use std::{f64, fmt};
 
-    use sxd_document::Package;
+    use sxd_document_no_unsafe::Package;
 
     use crate::context;
     use crate::nodeset::Node;

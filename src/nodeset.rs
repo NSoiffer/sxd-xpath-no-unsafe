@@ -6,8 +6,8 @@ use std::collections::{HashMap, HashSet};
 use std::iter::{FromIterator, IntoIterator};
 use std::usize;
 
-use sxd_document::dom;
-use sxd_document::QName;
+use sxd_document_no_unsafe::dom;
+use sxd_document_no_unsafe::QName;
 
 macro_rules! unpack(
     ($enum_name:ident, {
@@ -526,7 +526,7 @@ impl<'d> FromIterator<Node<'d>> for OrderedNodes<'d> {
 mod test {
     use std::borrow::ToOwned;
 
-    use sxd_document::Package;
+    use sxd_document_no_unsafe::Package;
 
     use super::Node::*;
     use super::{Node, Nodeset};

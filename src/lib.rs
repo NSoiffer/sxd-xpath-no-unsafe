@@ -16,7 +16,7 @@
 //! to use [`evaluate_xpath`][evaluate_xpath].
 //!
 //! ```
-//! use sxd_document::parser;
+//! use sxd_document_no_unsafe::parser;
 //! use sxd_xpath::{evaluate_xpath, Value};
 //!
 //! let package = parser::parse("<root>hello</root>").expect("failed to parse XML");
@@ -40,7 +40,7 @@
 //! accomplished:
 //!
 //! ```
-//! use sxd_document::parser;
+//! use sxd_document_no_unsafe::parser;
 //! use sxd_xpath::{Factory, Context, Value};
 //!
 //! let package = parser::parse("<root>hello</root>")
@@ -105,8 +105,8 @@
 use snafu::{ResultExt, Snafu};
 use std::borrow::ToOwned;
 use std::string;
-use sxd_document::dom::Document;
-use sxd_document::{PrefixedName, QName};
+use sxd_document_no_unsafe::dom::Document;
+use sxd_document_no_unsafe::{PrefixedName, QName};
 
 use crate::parser::Parser;
 use crate::tokenizer::{TokenDeabbreviator, Tokenizer};
@@ -354,7 +354,7 @@ impl XPath {
     /// The most common case is to pass in a reference to a [`Context`][]:
     ///
     /// ```rust,no_run
-    /// use sxd_document::dom::Document;
+    /// use sxd_document_no_unsafe::dom::Document;
     /// use sxd_xpath::{XPath, Context};
     ///
     /// fn my_evaluate(doc: Document, xpath: XPath) {
@@ -442,7 +442,7 @@ pub enum Error {
 /// # Examples
 ///
 /// ```
-/// use sxd_document::parser;
+/// use sxd_document_no_unsafe::parser;
 /// use sxd_xpath::{evaluate_xpath, Value};
 ///
 /// let package = parser::parse("<root><a>1</a><b>2</b></root>").expect("failed to parse the XML");
@@ -465,7 +465,7 @@ pub fn evaluate_xpath<'d>(document: &'d Document<'d>, xpath: &str) -> Result<Val
 mod test {
     use std::borrow::ToOwned;
 
-    use sxd_document::{self, dom, Package};
+    use sxd_document_no_unsafe::{self, dom, Package};
 
     use super::*;
 
@@ -591,7 +591,7 @@ mod test {
     where
         F: FnOnce(dom::Document<'_>),
     {
-        let package = sxd_document::parser::parse(xml).expect("Unable to parse test XML");
+        let package = sxd_document_no_unsafe::parser::parse(xml).expect("Unable to parse test XML");
         f(package.as_document());
     }
 
