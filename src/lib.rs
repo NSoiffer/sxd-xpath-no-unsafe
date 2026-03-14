@@ -17,7 +17,7 @@
 //!
 //! ```
 //! use sxd_document_no_unsafe::parser;
-//! use sxd_xpath::{evaluate_xpath, Value};
+//! use sxd_xpath_no_unsafe::{evaluate_xpath, Value};
 //!
 //! let package = parser::parse("<root>hello</root>").expect("failed to parse XML");
 //! let document = package.as_document();
@@ -41,7 +41,7 @@
 //!
 //! ```
 //! use sxd_document_no_unsafe::parser;
-//! use sxd_xpath::{Factory, Context, Value};
+//! use sxd_xpath_no_unsafe::{Factory, Context, Value};
 //!
 //! let package = parser::parse("<root>hello</root>")
 //!     .expect("failed to parse XML");
@@ -203,35 +203,11 @@ impl<'a> From<QName<'a>> for OwnedQName {
 }
 
 impl OwnedQName {
-    pub fn namespace_uri(&self) -> Option<&str> {
-        self.namespace_uri.as_deref()
-    }
     pub fn local_part(&self) -> &str {
         &self.local_part
     }
-}
-
-/// Trait for types that provide QName-like access (namespace_uri, local_part).
-pub trait QNameLike {
-    fn namespace_uri(&self) -> Option<&str>;
-    fn local_part(&self) -> &str;
-}
-
-impl<'a> QNameLike for QName<'a> {
-    fn namespace_uri(&self) -> Option<&str> {
-        QName::namespace_uri(self)
-    }
-    fn local_part(&self) -> &str {
-        QName::local_part(self)
-    }
-}
-
-impl QNameLike for OwnedQName {
-    fn namespace_uri(&self) -> Option<&str> {
-        OwnedQName::namespace_uri(self)
-    }
-    fn local_part(&self) -> &str {
-        OwnedQName::local_part(self)
+    pub fn namespace_uri(&self) -> Option<&str> {
+        self.namespace_uri.as_deref()
     }
 }
 
@@ -388,7 +364,7 @@ impl XPath {
     ///
     /// ```rust,no_run
     /// use sxd_document_no_unsafe::dom::Document;
-    /// use sxd_xpath::{XPath, Context};
+    /// use sxd_xpath_no_unsafe::{XPath, Context};
     ///
     /// fn my_evaluate(doc: Document, xpath: XPath) {
     ///     let mut context = Context::new();
@@ -476,7 +452,7 @@ pub enum Error {
 ///
 /// ```
 /// use sxd_document_no_unsafe::parser;
-/// use sxd_xpath::{evaluate_xpath, Value};
+/// use sxd_xpath_no_unsafe::{evaluate_xpath, Value};
 ///
 /// let package = parser::parse("<root><a>1</a><b>2</b></root>").expect("failed to parse the XML");
 /// let document = package.as_document();

@@ -1,24 +1,41 @@
 //! Support for collections of nodes.
 
-use std::borrow::{Cow, ToOwned};
+use std::borrow::ToOwned;
 use std::collections::hash_set;
 use std::collections::{HashMap, HashSet};
 use std::iter::{FromIterator, IntoIterator};
 use std::usize;
 
 use sxd_document_no_unsafe::dom;
-use sxd_document_no_unsafe::{as_opt_str, as_str, as_qname, QName};
+use sxd_document_no_unsafe::QName;
+use sxd_document_no_unsafe::NsStr;
 
+#[cfg(feature = "no-unsafe")]
 use crate::OwnedQName;
+
+#[cfg(not(feature = "no-unsafe"))]
+pub type ExpandedName<'d> = QName<'d>;
+#[cfg(feature = "no-unsafe")]
+pub type ExpandedName<'d> = OwnedQName;
+
+#[cfg(not(feature = "no-unsafe"))]
+macro_rules! to_expanded_name {
+    ($e:expr) => { $e };
+}
+
+#[cfg(feature = "no-unsafe")]
+macro_rules! to_expanded_name {
+    ($e:expr) => { OwnedQName::from($e) };
+}
 
 macro_rules! unpack(
     ($enum_name:ident, {
         $($name:ident, $wrapper:ident, dom::$inner:ident),*
     }) => (
         $(
-            pub fn $name(self) -> Option<dom::$inner<'d>> {
+            pub fn $name(&self) -> Option<dom::$inner<'d>> {
                 match self {
-                    $enum_name::$wrapper(n) => Some(n),
+                    $enum_name::$wrapper(n) => Some(*n),
                     _ => None,
                 }
             }
@@ -45,9 +62,12 @@ macro_rules! conversion_trait(
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Namespace<'d> {
     pub parent: dom::Element<'d>,
-    pub prefix: Cow<'d, str>,
-    pub uri: Cow<'d, str>,
+    pub prefix: NsStr<'d>,
+    pub uri: NsStr<'d>,
 }
+
+#[cfg(not(feature = "no-unsafe"))]
+impl<'d> Copy for Namespace<'d> {}
 
 impl<'d> Namespace<'d> {
     pub fn document(&self) -> dom::Document<'d> {
@@ -57,13 +77,13 @@ impl<'d> Namespace<'d> {
         self.parent
     }
     pub fn prefix(&self) -> &str {
-        self.prefix.as_ref()
+        sxd_document_no_unsafe::as_str!(self.prefix)
     }
     pub fn uri(&self) -> &str {
-        self.uri.as_ref()
+        sxd_document_no_unsafe::as_str!(self.uri)
     }
-    pub fn expanded_name(&self) -> OwnedQName {
-        OwnedQName::from(self.prefix.as_ref())
+    pub fn expanded_name(&self) -> ExpandedName<'d> {
+        to_expanded_name!(QName::new(sxd_document_no_unsafe::as_str!(self.prefix)))
     }
 }
 
@@ -78,6 +98,9 @@ pub enum Node<'d> {
     Namespace(Namespace<'d>),
     ProcessingInstruction(dom::ProcessingInstruction<'d>),
 }
+
+#[cfg(not(feature = "no-unsafe"))]
+impl<'d> Copy for Node<'d> {}
 
 impl<'d> Node<'d> {
     /// The document to which this node belongs.
@@ -98,17 +121,14 @@ impl<'d> Node<'d> {
     pub fn prefixed_name(&self) -> Option<String> {
         use self::Node::*;
 
-        fn qname_prefixed_name<Q: crate::QNameLike>(
+        fn qname_prefixed_name(
             element: dom::Element<'_>,
-            name: &Q,
+            name: QName<'_>,
             preferred_prefix: Option<&str>,
         ) -> String {
             if let Some(ns_uri) = name.namespace_uri() {
-                let prefix_interned = element.prefix_for_namespace_uri(ns_uri, preferred_prefix);
-                // as_opt_str! doesn't handle InternedString/StrGuard; use explicit conversion
-                let prefix_opt = prefix_interned.as_ref().map(|s| &**s);
-                if let Some(prefix) = prefix_opt {
-                    format!("{}:{}", prefix, name.local_part())
+                if let Some(prefix) = element.prefix_for_namespace_uri(ns_uri, sxd_document_no_unsafe::as_opt_str!(preferred_prefix)) {
+                    format!("{}:{}", sxd_document_no_unsafe::as_str!(prefix), name.local_part())
                 } else {
                     name.local_part().to_owned()
                 }
@@ -119,38 +139,30 @@ impl<'d> Node<'d> {
 
         match self {
             Root(_) => None,
-            Element(n) => {
-                let name: OwnedQName = as_qname!(n.name()).into();
-                let pref_guard = n.preferred_prefix();
-                let pref = pref_guard.as_ref().map(|g| &**g);
-                Some(qname_prefixed_name::<OwnedQName>(*n, &name, pref))
-            }
+            Element(n) => Some(qname_prefixed_name(*n, sxd_document_no_unsafe::as_qname!(n.name()), sxd_document_no_unsafe::as_opt_str!(n.preferred_prefix()))),
             Attribute(n) => {
                 let parent = n.parent().expect("Cannot process attribute without parent");
-                let name: OwnedQName = as_qname!(n.name()).into();
-                let pref_guard = n.preferred_prefix();
-                let pref = pref_guard.as_ref().map(|g| &**g);
-                Some(qname_prefixed_name::<OwnedQName>(parent, &name, pref))
+                Some(qname_prefixed_name(parent, sxd_document_no_unsafe::as_qname!(n.name()), sxd_document_no_unsafe::as_opt_str!(n.preferred_prefix())))
             }
             Text(_) => None,
             Comment(_) => None,
-            ProcessingInstruction(n) => Some(as_str!(n.target()).to_owned()),
-            Namespace(ref n) => Some(n.prefix().to_owned()),
+            ProcessingInstruction(n) => Some(sxd_document_no_unsafe::as_str!(n.target()).to_owned()),
+            Namespace(n) => Some(n.prefix().to_owned()),
         }
     }
 
     /// Returns the [expanded name][] of the node, if any.
     ///
     /// [expanded name]: https://www.w3.org/TR/xpath/#dt-expanded-name
-    pub fn expanded_name(&self) -> Option<OwnedQName> {
+    pub fn expanded_name(&self) -> Option<ExpandedName<'d>> {
         use self::Node::*;
         match self {
             Root(_) => None,
-            Element(n) => Some(as_qname!(n.name()).into()),
-            Attribute(n) => Some(as_qname!(n.name()).into()),
+            Element(n) => Some(to_expanded_name!(sxd_document_no_unsafe::as_qname!(n.name()))),
+            Attribute(n) => Some(to_expanded_name!(sxd_document_no_unsafe::as_qname!(n.name()))),
             Text(_) => None,
             Comment(_) => None,
-            ProcessingInstruction(n) => Some(QName::new(as_str!(n.target())).into()),
+            ProcessingInstruction(n) => Some(to_expanded_name!(QName::new(sxd_document_no_unsafe::as_str!(n.target())))),
             Namespace(n) => Some(n.expanded_name()),
         }
     }
@@ -239,29 +251,29 @@ impl<'d> Node<'d> {
     pub fn string_value(&self) -> String {
         use self::Node::*;
 
-        fn document_order_text_nodes(node: Node<'_>, result: &mut String) {
+        fn document_order_text_nodes(node: &Node<'_>, result: &mut String) {
             for child in node.children() {
-                match child {
-                    Node::Element(_) => document_order_text_nodes(child, result),
-                    Node::Text(n) => result.push_str(as_str!(n.text())),
+                match &child {
+                    Node::Element(_) => document_order_text_nodes(&child, result),
+                    Node::Text(n) => result.push_str(sxd_document_no_unsafe::as_str!(n.text())),
                     _ => {}
                 }
             }
         }
 
-        fn text_descendants_string_value(node: Node<'_>) -> String {
+        fn text_descendants_string_value(node: &Node<'_>) -> String {
             let mut result = String::new();
             document_order_text_nodes(node, &mut result);
             result
         }
 
         match self {
-            Root(_) => text_descendants_string_value(self.clone()),
-            Element(_) => text_descendants_string_value(self.clone()),
-            Attribute(n) => as_str!(n.value()).to_owned(),
-            ProcessingInstruction(n) => as_opt_str!(n.value()).map(|s| s.to_string()).unwrap_or_default(),
-            Comment(n) => as_str!(n.text()).to_owned(),
-            Text(n) => as_str!(n.text()).to_owned(),
+            Root(_) => text_descendants_string_value(self),
+            Element(_) => text_descendants_string_value(self),
+            Attribute(n) => sxd_document_no_unsafe::as_str!(n.value()).to_owned(),
+            ProcessingInstruction(n) => sxd_document_no_unsafe::as_opt_str!(n.value()).unwrap_or("").to_owned(),
+            Comment(n) => sxd_document_no_unsafe::as_str!(n.text()).to_owned(),
+            Text(n) => sxd_document_no_unsafe::as_str!(n.text()).to_owned(),
             Namespace(n) => n.uri().to_owned(),
         }
     }
@@ -275,9 +287,9 @@ impl<'d> Node<'d> {
         processing_instruction, ProcessingInstruction, dom::ProcessingInstruction
     });
 
-    pub fn namespace(self) -> Option<Namespace<'d>> {
+    pub fn namespace(&self) -> Option<Namespace<'d>> {
         match self {
-            Node::Namespace(n) => Some(n),
+            Node::Namespace(n) => Some(n.clone()),
             _ => None,
         }
     }
@@ -374,7 +386,7 @@ impl<'d> Nodeset<'d> {
 
         self.nodes
             .iter()
-            .min_by_key(|n| order.order_of((*n).clone()))
+            .min_by_key(|n| order.order_of(n))
             .cloned()
     }
 
@@ -390,7 +402,7 @@ impl<'d> Nodeset<'d> {
         };
 
         let order = DocOrder::new(doc);
-        nodes.sort_by_key(|n| order.order_of(n.clone()));
+        nodes.sort_by_key(|n| order.order_of(n));
         nodes
     }
 }
@@ -431,9 +443,8 @@ impl<'d> DocOrder<'d> {
         DocOrder(order)
     }
 
-    fn order_of(&self, node: Node<'d>) -> usize {
-        // See the library-level docs for rationale on this MAX
-        self.0.get(&node).cloned().unwrap_or(usize::MAX)
+    fn order_of(&self, node: &Node<'d>) -> usize {
+        self.0.get(node).cloned().unwrap_or(usize::MAX)
     }
 }
 

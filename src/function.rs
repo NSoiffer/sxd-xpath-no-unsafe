@@ -259,7 +259,7 @@ impl Function for LocalName {
         let name = arg
             .document_order_first()
             .and_then(|n| n.expanded_name())
-            .map(|q| q.local_part().to_string())
+            .map(|q| q.local_part().to_owned())
             .unwrap_or_default();
         Ok(Value::String(name))
     }
@@ -279,7 +279,7 @@ impl Function for NamespaceUri {
         let name = arg
             .document_order_first()
             .and_then(|n| n.expanded_name())
-            .and_then(|q| q.namespace_uri().map(|s| s.to_string()))
+            .and_then(|q| q.namespace_uri().map(|s| s.to_owned()))
             .unwrap_or_default();
         Ok(Value::String(name))
     }

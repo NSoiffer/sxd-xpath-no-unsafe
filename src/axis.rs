@@ -1,7 +1,4 @@
-use std::borrow::Cow;
 use std::fmt;
-
-use sxd_document_no_unsafe::as_str;
 
 use crate::context;
 use crate::node_test::NodeTest;
@@ -94,9 +91,10 @@ impl AxisLike for Axis {
                     for ns in e.namespaces_in_scope() {
                         let ns = Node::Namespace(nodeset::Namespace {
                             parent: *e,
-                            prefix: Cow::Owned(as_str!(ns.prefix()).to_owned()),
-                            uri: Cow::Owned(as_str!(ns.uri()).to_owned()),
+                            prefix: sxd_document_no_unsafe::to_ns_str!(ns.prefix()),
+                            uri: sxd_document_no_unsafe::to_ns_str!(ns.uri()),
                         });
+
                         node_test.run(ns);
                     }
                 }
@@ -160,9 +158,10 @@ where
     let mut stack = vec![node];
 
     while let Some(current) = stack.pop() {
-        f(current.clone());
+        let children = current.children();
+        f(current);
 
-        for child in current.children().into_iter().rev() {
+        for child in children.into_iter().rev() {
             stack.push(child);
         }
     }
@@ -193,7 +192,8 @@ fn node_and_each_parent<'d, F>(node: Node<'d>, mut f: F)
 where
     F: FnMut(Node<'d>),
 {
-    f(node.clone());
+    let n = node.clone();
+    f(n);
     each_parent(node, f);
 }
 
@@ -202,8 +202,8 @@ where
     F: FnMut(Node<'d>),
 {
     while let Some(parent) = node.parent() {
-        f(parent.clone());
-        node = parent;
+        node = parent.clone();
+        f(parent);
     }
 }
 

@@ -1,25 +1,24 @@
 [package]
-name = "sxd-xpath-nounsafe"
+name = "sxd-xpath-no-unsafe"
 version = "0.5.0"
-authors = ["Jake Goulding <jake.goulding@gmail.com>", "Neil Soiffer <neil.soiffer@gmail.com>"]
+authors = ["Jake Goulding <jake.goulding@gmail.com>", "Neil Soiffer <soiffer@alum.mit.edu>"]
 edition = "2018"
 
-description = "A Rust XML XPath library"
+description = "A Rust XML XPath library with an optional no-unsafe feature"
 readme = "README.md"
 keywords = ["xml", "xpath"]
 
-repository = "https://github.com/shepmaster/sxd-xpath"
-documentation = "https://github.com/NSoiffer/sxd-xpath-no-unsafe"
+repository = "https://github.com/nsoiffer/sxd-xpath"
+documentation = "https://docs.rs/sxd-xpath/"
 
 license = "MIT/Apache-2.0"
 
 [features]
 # Unused -- remove on next semver-imcompatible release
 unstable = []
-# Enable sxd-document-no-unsafe's no-unsafe feature (guard types instead of unsafe transmute)
 no-unsafe = ["sxd-document-no-unsafe/no-unsafe"]
 
 [dependencies]
 peresil = "0.3.0"
-sxd-document-no-unsafe = { path = "../sxd-document", package = "sxd-document-no-unsafe" }
+sxd-document-no-unsafe = "0.4.1"
 snafu = "0.5.0"
