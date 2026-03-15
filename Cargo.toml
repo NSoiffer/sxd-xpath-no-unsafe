@@ -2,7 +2,7 @@
 name = "sxd-xpath-no-unsafe"
 version = "0.5.1"
 authors = ["Jake Goulding <jake.goulding@gmail.com>", "Neil Soiffer <soiffer@alum.mit.edu>"]
-edition = "2018"
+edition = "2024"
 
 description = "A Rust XML XPath library with an optional no-unsafe feature"
 readme = "README.md"
